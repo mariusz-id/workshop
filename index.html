@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard Warsztat PRO</title>
+    <style>
+        /* OCHRONA MATRYCY: Pływający gradient w tle (ciemny szary/czarny) */
+        body { 
+            margin: 0; 
+            display: flex; 
+            height: 100vh; 
+            overflow: hidden; 
+            font-family: Arial, sans-serif;
+            background: linear-gradient(270deg, #000000, #1a1a1a, #0a0a0a);
+            background-size: 600% 600%;
+            animation: moveBG 20s ease infinite;
+            color: #bcbcbc; /* Jasnoszary zamiast białego dla ochrony matrycy */
+        }
+
+        @keyframes moveBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* LEWY PANEL (Zegar + Pogoda) */
+        .left { 
+            width: 35%; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            border-right: 1px solid #333; 
+            text-align: center; 
+            background: transparent; 
+        }
+
+        /* ZEGAR Z MIKRORUCHEM (Pixel Shifting) */
+        #clock { 
+            font-size: 8.5rem; 
+            font-weight: bold; 
+            line-height: 1; 
+            margin: 0; 
+            color: #d1d1d1;
+            animation: shift 60s linear infinite;
+        }
+
+        @keyframes shift {
+            0%, 100% { transform: translate(0,0); }
+            25% { transform: translate(2px, 2px); }
+            50% { transform: translate(-2px, 1px); }
+            75% { transform: translate(1px, -2px); }
+        }
+
+        #day { font-size: 3rem; color: #00a8cc; text-transform: capitalize; margin: 10px 0; }
+        #date { font-size: 1.5rem; color: #666; }
+        #weather { font-size: 2.2rem; margin-top: 40px; color: #ccac00; font-weight: bold; }
+
+        /* PRAWY PANEL (Grafik) */
+        .right { width: 65%; padding: 30px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; }
+        .header-row { display: flex; justify-content: space-between; padding-bottom: 15px; border-bottom: 2px solid #00a8cc; margin-bottom: 10px; color: #00a8cc; font-weight: bold; text-transform: uppercase; }
+        .h-name { width: 40%; font-size: 1.5rem; }
+        .h-status { width: 30%; font-size: 1.5rem; text-align: center; }
+
+        .employee { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #222; }
+        .col-name { width: 40%; font-size: 2.8rem; font-weight: bold; color: #d1d1d1; }
+        .col-status { width: 30%; font-size: 2.4rem; font-weight: bold; text-align: center; color: #00cc00; }
+        .absent { color: #cc3333 !important; }
+
+        /* EKRAN KOŃCOWY (Alarm) */
+        #finish {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: moveBG 5s ease infinite;
+            z-index: 2000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        .finish-text { font-size: 8rem; font-weight: 900; animation: bounce 1s infinite; text-shadow: 4px 4px 15px rgba(0,0,0,0.3); }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+
+        /* PRZYCISK STARTU */
+        #radio-box { position: fixed; bottom: 50px; left: 50%; transform: translateX(-50%); z-index: 1000; }
+        #radio-btn { font-size: 2.5rem; padding: 20px 40px; background: #00a8cc; color: #000; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<audio id="radio" src="https://zt01.cdn.eurozet.pl/zet-net.mp3" preload="none"></audio>
+<audio id="alarm" src="koniec.mp3" preload="auto"></audio>
+
+<div class="left">
+    <div id="clock">00:00</div>
+    <div id="day"></div>
+    <div id="date"></div>
+    <div id="weather">Pobieranie...</div>
+</div>
+
+<div class="right">
+    <div class="header-row">
+        <div class="h-name">Imię</div>
+        <div class="h-status">Dziś</div>
+        <div class="h-status">Jutro</div>
+    </div>
+    <div id="schedule">Wczytywanie...</div>
+</div>
+
+<div id="finish">
+    <div class="finish-text">HRnest ✅</div>
+</div>
+
+<div id="radio-box">
+    <button id="radio-btn">🎵 URUCHOM RADIO</button>
+</div>
+
+<script>
+// --- KONFIGURACJA ---
+const LINK_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRxZeZrfHBMDDlwD5mRTtn0IwUQPIowQE-hTUB5xo6Xp_cCeFxPigFXrscqPtPCXmojD0eB3eF7P8ZD/pub?output=csv';
+var alarmDone = false;
+var radioWasPlaying = false;
+
+function escapeHtml(unsafe) {
+    if(!unsafe) return "";
+    return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+
+    function updateClock() {
+        var now = new Date();
+        var h = String(now.getHours()).padStart(2, '0');
+        var m = String(now.getMinutes()).padStart(2, '0');
+        
+        document.getElementById('clock').textContent = h + ":" + m;
+        document.getElementById('day').textContent = now.toLocaleDateString('pl-PL', { weekday: 'long' });
+        document.getElementById('date').textContent = now.toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' });
+
+        // Reset alarmu o północy
+        if (h === '00' && m === '00') alarmDone = false;
+
+        // ALARM O 15:55
+        if (h === '19' && m === '28' && !alarmDone) {
+            alarmDone = true;
+            var f = document.getElementById('finish');
+            var a = document.getElementById('alarm');
+            var r = document.getElementById('radio');
+
+            // Zapamiętujemy czy radio grało
+            radioWasPlaying = !r.paused;
+
+            f.style.display = 'flex';
+            r.pause();
+            if(a) a.play().catch(function(){});
+
+            // CZAS TRWANIA: 14 SEKUND
+            setTimeout(function() {
+                f.style.display = 'none';
+                if(a) { a.pause(); a.currentTime = 0; }
+                
+                // Powrót do radia jeśli grało wcześniej
+                if(radioWasPlaying) {
+                    r.play().catch(function(){});
+                }
+            }, 14000); 
+        }
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    async function updateWeather() {
+        try {
+            var res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=51.10&longitude=17.03&current_weather=true');
+            var data = await res.json();
+            document.getElementById('weather').textContent = "Wrocław ☀️ " + Math.round(data.current_weather.temperature) + "°C";
+        } catch (e) { document.getElementById('weather').textContent = 'Wrocław --°C'; }
+    }
+    updateWeather();
+    setInterval(updateWeather, 3600000); // Pogoda co 1h
+
+    async function loadSchedule() {
+        try {
+            var url = LINK_CSV + (LINK_CSV.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now();
+            var res = await fetch(url);
+            var text = await res.text();
+            var rows = text.split(/\r?\n/);
+            var html = '';
+
+            for (var i = 1; i < rows.length; i++) {
+                var row = rows[i].trim();
+                if (!row) continue;
+                var sep = row.includes(';') ? ';' : ',';
+                var cols = row.split(sep);
+                if (cols.length >= 3) {
+                    var n = escapeHtml(cols[0].replace(/^"|"$/g, '').trim());
+                    var s1 = escapeHtml(cols[1].replace(/^"|"$/g, '').trim());
+                    var s2 = escapeHtml(cols[2].replace(/^"|"$/g, '').trim());
+                    if (n) {
+                        var chk = function(s) {
+                            var u = s.toUpperCase();
+                            return u.indexOf("URLOP") !== -1 || u.indexOf("L4") !== -1 || u.indexOf("WOLNE") !== -1;
+                        };
+                        html += '<div class="employee"><div class="col-name">' + n + '</div>' +
+                                '<div class="col-status ' + (chk(s1) ? 'absent' : '') + '">' + s1 + '</div>' +
+                                '<div class="col-status ' + (chk(s2) ? 'absent' : '') + '">' + s2 + '</div></div>';
+                    }
+                }
+            }
+            document.getElementById('schedule').innerHTML = html || 'Brak danych';
+        } catch (err) { document.getElementById('schedule').innerHTML = 'Błąd połączenia'; }
+    }
+    loadSchedule();
+    setInterval(loadSchedule, 300000); // Grafik co 5 min
+
+    document.getElementById('radio-btn').addEventListener('click', function() {
+        var r = document.getElementById('radio');
+        r.volume = 0.4;
+        r.play().then(function() { 
+            document.getElementById('radio-box').style.display = 'none'; 
+        });
+    });
+});
+</script>
+</body>
+</html>
