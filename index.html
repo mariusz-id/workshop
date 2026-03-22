@@ -144,7 +144,7 @@ document.addEventListener("DOMContentLoaded", function() {
         if (h === '00' && m === '00') alarmDone = false;
 
         // ALARM O 15:55
-        if (h === '12' && m === '10' && !alarmDone) {
+        if (h === '12' && m === '14' && !alarmDone) {
             alarmDone = true;
             var f = document.getElementById('finish');
             var a = document.getElementById('alarm');
@@ -166,7 +166,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 if(radioWasPlaying) {
                     r.play().catch(function(){});
                 }
-            },30000); 
+            },14000); 
         }
     }
     setInterval(updateClock, 1000);
