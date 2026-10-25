@@ -2,97 +2,250 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Workshop</title>
+
     <style>
-        /* OCHRONA MATRYCY: Pływający gradient w tle (ciemny szary/czarny) */
-        body { 
-            margin: 0; 
-            display: flex; 
-            height: 100vh; 
-            overflow: hidden; 
+        /* CIEMNY, ANIMOWANY GRADIENT - OGRANICZENIE RYZYKA WYPALENIA */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            display: flex;
+            width: 100%;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
             font-family: Arial, sans-serif;
             background: linear-gradient(270deg, #000000, #1a1a1a, #0a0a0a);
             background-size: 600% 600%;
             animation: moveBG 20s ease infinite;
-            color: #bcbcbc; /* Jasnoszary zamiast białego dla ochrony matrycy */
+            color: #bcbcbc;
         }
 
         @keyframes moveBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
+            0%   { background-position: 0% 50%; }
+            50%  { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
 
-        /* LEWY PANEL (Zegar + Pogoda) */
-        .left { 
-            width: 35%; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            border-right: 1px solid #333; 
-            text-align: center; 
-            background: transparent; 
+        /* LEWY PANEL - ZEGAR I POGODA */
+        .left {
+            flex: 0 0 35%;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-right: 1px solid #333;
+            text-align: center;
+            background: transparent;
+            padding: 16px;
         }
 
-        /* ZEGAR Z MIKRORUCHEM (Pixel Shifting) */
-        #clock { 
-            font-size: 8.5rem; 
-            font-weight: bold; 
-            line-height: 1; 
-            margin: 0; 
+        /* ZEGAR Z MIKRORUCHEM */
+        #clock {
+            font-size: clamp(4.5rem, 10.5vw, 8.5rem);
+            font-weight: bold;
+            line-height: 1;
+            margin: 0;
             color: #d1d1d1;
             animation: shift 60s linear infinite;
         }
 
         @keyframes shift {
-            0%, 100% { transform: translate(0,0); }
-            25% { transform: translate(2px, 2px); }
-            50% { transform: translate(-2px, 1px); }
-            75% { transform: translate(1px, -2px); }
+            0%, 100% { transform: translate(0, 0); }
+            25%      { transform: translate(2px, 2px); }
+            50%      { transform: translate(-2px, 1px); }
+            75%      { transform: translate(1px, -2px); }
         }
 
-        #day { font-size: 3rem; color: #00a8cc; text-transform: capitalize; margin: 10px 0; }
-        #date { font-size: 1.5rem; color: #666; }
-        #weather { font-size: 2.2rem; margin-top: 40px; color: #ccac00; font-weight: bold; }
+        #day {
+            font-size: clamp(1.6rem, 3.5vw, 3rem);
+            color: #00a8cc;
+            text-transform: capitalize;
+            margin: 10px 0;
+        }
 
-        /* PRAWY PANEL (Grafik) */
-        .right { width: 65%; padding: 30px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; }
-        .header-row { display: flex; justify-content: space-between; padding-bottom: 15px; border-bottom: 2px solid #00a8cc; margin-bottom: 10px; color: #00a8cc; font-weight: bold; text-transform: uppercase; }
-        .h-name { width: 40%; font-size: 1.5rem; }
-        .h-status { width: 30%; font-size: 1.5rem; text-align: center; }
+        #date {
+            font-size: clamp(1rem, 1.8vw, 1.5rem);
+            color: #666;
+        }
 
-        .employee { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #222; }
-        .col-name { width: 40%; font-size: 2.8rem; font-weight: bold; color: #d1d1d1; }
-        .col-status { width: 30%; font-size: 2.4rem; font-weight: bold; text-align: center; color: #00cc00; }
-        .absent { color: #cc3333 !important; }
+        #weather {
+            font-size: clamp(1.35rem, 2.6vw, 2.2rem);
+            margin-top: 32px;
+            color: #ccac00;
+            font-weight: bold;
+        }
 
-        /* EKRAN KOŃCOWY (Alarm) */
-        #finish {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-            background-size: 400% 400%;
-            animation: moveBG 5s ease infinite;
-            z-index: 2000;
+        /* PRAWY PANEL - GRAFIK */
+        .right {
+            flex: 1 1 65%;
+            min-width: 0;
+            padding: 22px 26px;
+            display: flex;
             flex-direction: column;
-            align-items: center;
             justify-content: center;
-            color: white;
+            overflow: hidden;
         }
-        .finish-text { font-size: 8rem; font-weight: 900; animation: bounce 1s infinite; text-shadow: 4px 4px 15px rgba(0,0,0,0.3); }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
 
-        /* PRZYCISK STARTU */
-        #radio-box { position: fixed; bottom: 50px; left: 50%; transform: translateX(-50%); z-index: 1000; }
-        #radio-btn { font-size: 2.5rem; padding: 20px 40px; background: #00a8cc; color: #000; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; }
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #00a8cc;
+            margin-bottom: 4px;
+            color: #00a8cc;
+            font-weight: bold;
+            text-transform: uppercase;
+            flex: 0 0 auto;
+        }
+
+        .h-name {
+            width: 40%;
+            font-size: clamp(1rem, 1.7vw, 1.5rem);
+        }
+
+        .h-status {
+            width: 30%;
+            font-size: clamp(1rem, 1.7vw, 1.5rem);
+            text-align: center;
+        }
+
+        #schedule {
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .employee {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 7px 0;
+            border-bottom: 1px solid #222;
+            min-height: 0;
+        }
+
+        .col-name {
+            width: 40%;
+            font-size: clamp(1.35rem, 2.5vw, 2.2rem);
+            line-height: 1.08;
+            font-weight: bold;
+            color: #d1d1d1;
+            overflow-wrap: anywhere;
+        }
+
+        .col-status {
+            width: 30%;
+            font-size: clamp(1.2rem, 2.1vw, 1.9rem);
+            line-height: 1.08;
+            font-weight: bold;
+            text-align: center;
+            color: #00cc00;
+            overflow-wrap: anywhere;
+        }
+
+        .absent {
+            color: #cc3333 !important;
+        }
+
+        /* PRZYCISK RADIA */
+        #radio-box {
+            position: fixed;
+            bottom: 22px;
+            left: 17.5%;
+            transform: translateX(-50%);
+            z-index: 1000;
+        }
+
+        #radio-btn {
+            font-size: clamp(1rem, 2vw, 2rem);
+            padding: 14px 24px;
+            background: #00a8cc;
+            color: #000;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* DOPASOWANIE DO EKRANU 720p */
+        @media (max-height: 800px) {
+            .right {
+                padding: 14px 22px;
+            }
+
+            .header-row {
+                padding-bottom: 7px;
+            }
+
+            .employee {
+                padding: 5px 0;
+            }
+
+            #weather {
+                margin-top: 24px;
+            }
+
+            #radio-box {
+                bottom: 14px;
+            }
+
+            #radio-btn {
+                padding: 10px 18px;
+            }
+        }
+
+        /* WĘŻSZE EKRANY */
+        @media (max-width: 900px) {
+            .left {
+                flex-basis: 32%;
+                padding: 10px;
+            }
+
+            .right {
+                padding: 12px;
+            }
+
+            .h-name,
+            .h-status {
+                font-size: 0.95rem;
+            }
+
+            .col-name {
+                font-size: clamp(1.1rem, 2.5vw, 1.7rem);
+            }
+
+            .col-status {
+                font-size: clamp(1rem, 2.1vw, 1.45rem);
+            }
+
+            #radio-btn {
+                font-size: 1rem;
+                padding: 10px 14px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            body,
+            #clock {
+                animation: none;
+            }
+        }
     </style>
 </head>
+
 <body>
 
-<audio id="radio" src="https://zt01.cdn.eurozet.pl/zet-net.mp3" preload="none"></audio>
-<audio id="alarm" src="koniec.mp3" preload="auto"></audio>
+<audio
+    id="radio"
+    src="https://zt01.cdn.eurozet.pl/zet-net.mp3"
+    preload="none">
+</audio>
 
 <div class="left">
     <div id="clock">00:00</div>
@@ -107,11 +260,8 @@
         <div class="h-status">Dziś</div>
         <div class="h-status">Kolejny dzień</div>
     </div>
-    <div id="schedule">Wczytywanie...</div>
-</div>
 
-<div id="finish">
-    <div class="finish-text">HRnest ✅</div>
+    <div id="schedule">Wczytywanie...</div>
 </div>
 
 <div id="radio-box">
@@ -119,111 +269,222 @@
 </div>
 
 <script>
-// --- KONFIGURACJA ---
+// ==================================================
+// KONFIGURACJA
+// ==================================================
+
 const LINK_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRxZeZrfHBMDDlwD5mRTtn0IwUQPIowQE-hTUB5xo6Xp_cCeFxPigFXrscqPtPCXmojD0eB3eF7P8ZD/pub?output=csv';
-var alarmDone = false;
-var radioWasPlaying = false;
+
+
+// ==================================================
+// ZABEZPIECZENIE TEKSTU
+// ==================================================
 
 function escapeHtml(unsafe) {
-    if(!unsafe) return "";
-    return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    if (!unsafe) return "";
+
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
+
+
+// ==================================================
+// GŁÓWNY START
+// ==================================================
 
 document.addEventListener("DOMContentLoaded", function() {
 
+    // ----------------------------------------------
+    // ZEGAR, DZIEŃ TYGODNIA I DATA
+    // ----------------------------------------------
+
     function updateClock() {
         var now = new Date();
+
         var h = String(now.getHours()).padStart(2, '0');
         var m = String(now.getMinutes()).padStart(2, '0');
-        
+
         document.getElementById('clock').textContent = h + ":" + m;
-        document.getElementById('day').textContent = now.toLocaleDateString('pl-PL', { weekday: 'long' });
-        document.getElementById('date').textContent = now.toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' });
 
-        // Reset alarmu o północy
-        if (h === '00' && m === '00') alarmDone = false;
+        document.getElementById('day').textContent =
+            now.toLocaleDateString('pl-PL', {
+                weekday: 'long'
+            });
 
-        // ALARM O 15:55
-        if (h === '20' && m === '00' && !alarmDone) {
-            alarmDone = true;
-            var f = document.getElementById('finish');
-            var a = document.getElementById('alarm');
-            var r = document.getElementById('radio');
-
-            // Zapamiętujemy czy radio grało
-            radioWasPlaying = !r.paused;
-
-            f.style.display = 'flex';
-            r.pause();
-            if(a) a.play().catch(function(){});
-
-            // CZAS TRWANIA: 14 SEKUND
-            setTimeout(function() {
-                f.style.display = 'none';
-                if(a) { a.pause(); a.currentTime = 0; }
-                
-                // Powrót do radia jeśli grało wcześniej
-                if(radioWasPlaying) {
-                    r.play().catch(function(){});
-                }
-            },14000); 
-        }
+        document.getElementById('date').textContent =
+            now.toLocaleDateString('pl-PL', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
     }
-    setInterval(updateClock, 1000);
+
     updateClock();
+    setInterval(updateClock, 1000);
+
+
+    // ----------------------------------------------
+    // POGODA - IKONA ZALEŻNA OD AKTUALNYCH WARUNKÓW
+    // Odświeżanie co godzinę
+    // ----------------------------------------------
 
     async function updateWeather() {
         try {
-            var res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=51.10&longitude=17.03&current_weather=true');
+            var res = await fetch(
+                'https://api.open-meteo.com/v1/forecast?latitude=51.10&longitude=17.03&current=temperature_2m,weather_code&timezone=Europe%2FWarsaw'
+            );
+
+            if (!res.ok) {
+                throw new Error('Błąd pobierania pogody');
+            }
+
             var data = await res.json();
-            document.getElementById('weather').textContent = "Wrocław ☀️ " + Math.round(data.current_weather.temperature) + "°C";
-        } catch (e) { document.getElementById('weather').textContent = 'Wrocław --°C'; }
+
+            var temperatura = Math.round(data.current.temperature_2m);
+            var kod = data.current.weather_code;
+            var ikona = '🌡️';
+
+            // Kody pogody Open-Meteo (WMO)
+            if (kod === 0) {
+                ikona = '☀️';               // Bezchmurnie
+            } else if (kod === 1) {
+                ikona = '🌤️';               // Przeważnie słonecznie
+            } else if (kod === 2) {
+                ikona = '⛅';                // Częściowe zachmurzenie
+            } else if (kod === 3) {
+                ikona = '☁️';               // Pochmurno
+            } else if ([45, 48].includes(kod)) {
+                ikona = '🌫️';               // Mgła
+            } else if ([51, 53, 55, 56, 57].includes(kod)) {
+                ikona = '🌦️';               // Mżawka
+            } else if ([61, 63, 65, 66, 67, 80, 81, 82].includes(kod)) {
+                ikona = '🌧️';               // Deszcz lub przelotne opady
+            } else if ([71, 73, 75, 77, 85, 86].includes(kod)) {
+                ikona = '❄️';               // Śnieg
+            } else if ([95, 96, 99].includes(kod)) {
+                ikona = '⛈️';               // Burza
+            }
+
+            document.getElementById('weather').textContent =
+                'Wrocław ' + ikona + ' ' + temperatura + '°C';
+
+        } catch (e) {
+            document.getElementById('weather').textContent = 'Wrocław --°C';
+        }
     }
+
     updateWeather();
-    setInterval(updateWeather, 3600000); // Pogoda co 1h
+    setInterval(updateWeather, 3600000);
+
+
+    // ----------------------------------------------
+    // GRAFIK PRACOWNIKÓW - GOOGLE SHEETS
+    // Odświeżanie co 5 minut
+    // ----------------------------------------------
 
     async function loadSchedule() {
         try {
-            var url = LINK_CSV + (LINK_CSV.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now();
+            var url = LINK_CSV +
+                (LINK_CSV.indexOf('?') >= 0 ? '&' : '?') +
+                't=' + Date.now();
+
             var res = await fetch(url);
+
+            if (!res.ok) {
+                throw new Error('Błąd pobierania grafiku');
+            }
+
             var text = await res.text();
             var rows = text.split(/\r?\n/);
             var html = '';
 
             for (var i = 1; i < rows.length; i++) {
                 var row = rows[i].trim();
+
                 if (!row) continue;
+
                 var sep = row.includes(';') ? ';' : ',';
                 var cols = row.split(sep);
+
                 if (cols.length >= 3) {
-                    var n = escapeHtml(cols[0].replace(/^"|"$/g, '').trim());
-                    var s1 = escapeHtml(cols[1].replace(/^"|"$/g, '').trim());
-                    var s2 = escapeHtml(cols[2].replace(/^"|"$/g, '').trim());
+                    var n = escapeHtml(
+                        cols[0].replace(/^"|"$/g, '').trim()
+                    );
+
+                    var s1 = escapeHtml(
+                        cols[1].replace(/^"|"$/g, '').trim()
+                    );
+
+                    var s2 = escapeHtml(
+                        cols[2].replace(/^"|"$/g, '').trim()
+                    );
+
                     if (n) {
                         var chk = function(s) {
                             var u = s.toUpperCase();
-                            return u.indexOf("URLOP") !== -1 || u.indexOf("L4") !== -1 || u.indexOf("WOLNE") !== -1;
+
+                            return u.indexOf("URLOP") !== -1 ||
+                                   u.indexOf("L4") !== -1 ||
+                                   u.indexOf("WOLNE") !== -1;
                         };
-                        html += '<div class="employee"><div class="col-name">' + n + '</div>' +
-                                '<div class="col-status ' + (chk(s1) ? 'absent' : '') + '">' + s1 + '</div>' +
-                                '<div class="col-status ' + (chk(s2) ? 'absent' : '') + '">' + s2 + '</div></div>';
+
+                        html +=
+                            '<div class="employee">' +
+                                '<div class="col-name">' + n + '</div>' +
+                                '<div class="col-status ' +
+                                    (chk(s1) ? 'absent' : '') + '">' +
+                                    s1 +
+                                '</div>' +
+                                '<div class="col-status ' +
+                                    (chk(s2) ? 'absent' : '') + '">' +
+                                    s2 +
+                                '</div>' +
+                            '</div>';
                     }
                 }
             }
-            document.getElementById('schedule').innerHTML = html || 'Brak danych';
-        } catch (err) { document.getElementById('schedule').innerHTML = 'Błąd połączenia'; }
+
+            document.getElementById('schedule').innerHTML =
+                html || 'Brak danych';
+
+        } catch (err) {
+            // Zachowaj ostatni poprawny grafik przy chwilowym błędzie.
+            var schedule = document.getElementById('schedule');
+
+            if (!schedule.querySelector('.employee')) {
+                schedule.textContent = 'Błąd połączenia';
+            }
+        }
     }
+
     loadSchedule();
-    setInterval(loadSchedule, 300000); // Grafik co 5 min
+    setInterval(loadSchedule, 300000);
+
+
+    // ----------------------------------------------
+    // RADIO INTERNETOWE
+    // ----------------------------------------------
 
     document.getElementById('radio-btn').addEventListener('click', function() {
         var r = document.getElementById('radio');
+
         r.volume = 0.4;
-        r.play().then(function() { 
-            document.getElementById('radio-box').style.display = 'none'; 
-        });
+
+        r.play()
+            .then(function() {
+                document.getElementById('radio-box').style.display = 'none';
+            })
+            .catch(function() {
+                // Jeśli radio nie wystartuje, przycisk pozostanie widoczny.
+            });
     });
+
 });
 </script>
+
 </body>
 </html>
